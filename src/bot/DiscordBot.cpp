@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <format>
 #include <iostream>
+#include <random>
 #include <variant>
 
 namespace horelac::bot {
@@ -163,11 +164,47 @@ void DiscordBot::register_handlers() {
         }
         std::cerr << "Horelac connected\n";
     });
-    cluster_.on_slashcommand([this](const dpp::slashcommand_t& e) {
-        if (e.command.get_command_name() == "schedule") {
-            handle_schedule(e);
-        }
-    });
+  
+cluster_.on_slashcommand([this](const dpp::slashcommand_t& e) {
+    const auto name = e.command.get_command_name();
+
+    if (name == "schedule") {
+        handle_schedule(e);
+    }
+    else if (name == "grznar") {
+        static const std::array<std::string, 13> hlasky = {{
+            "Chceš růst? Musíš žrát, spát a sypat! Nic jinýho v tom není, ty trpaslíku zkurvenej.",
+            "Nohy se necvičí na objem, nohy se cvičí na smrt.",
+            "Pokud po tréninku nezvracíš, tak jsi netrénoval, ale jenom ses tam tak poflakoval.",
+            "Když vidím ty dnešní kluky v posilovně, jak si fotí selfíčka s polotučným tvarohem, je mi nablití.",
+            "Kreatin je pro děcka, pořádný chlapi potřebují pořádnou chemii.",
+            "Tak seš píča?",
+            "Jsem největší poslanec na světě, vy mrdky!",
+            "Ty na mě nemáš ani vizuálně, ani intelektuálně, ani silově, ty nulo.",
+            "Mně je úplně jedno, co si o mně myslí nějakej anonymní čurák na internetu, co váží padesát kilo i s postelí.",
+            "Zničím tě, zašlapu tě do země a pak si na tebe plivnu.",
+            "Život není o tom, abys byl slušnej. Život je o tom, abys byl tvrdej a bral si to, co ti patří.",
+            "Buď seš predátor, nebo seš kořist. Já jsem kurva predátor.",
+            "Etiketa v restauraci? Prostě tam přijdeš, sežereš to a vypadneš"
+        }};
+
+        static std::mt19937 rng(std::random_device{}());
+        std::uniform_int_distribution<std::size_t> dist(
+            0, hlasky.size() - 1
+        );
+
+        // Soukrome potvrzeni prikazu
+        e.reply(
+            dpp::message("Hotovo!")
+                .set_flags(dpp::m_ephemeral)
+        );
+
+        // Verejna zprava od bota
+        cluster_.message_create(
+            dpp::message(e.command.channel_id, hlasky[dist(rng)])
+        );
+    }
+});
     cluster_.on_button_click([this](const dpp::button_click_t& e) { handle_button(e); });
     cluster_.on_form_submit([this](const dpp::form_submit_t& e) { handle_form(e); });
 }
@@ -227,6 +264,20 @@ void DiscordBot::register_commands() {
         cluster_.guild_command_create(command, *config_.development_guild_id);
     } else {
         cluster_.global_command_create(command);
+    }
+  
+    dpp::slashcommand grznar(
+        "grznar",
+        "Nahodna hlaska z posilovny",
+        config_.application_id
+    );
+
+    if (config_.development_guild_id) {
+        cluster_.guild_command_create(
+            grznar, *config_.development_guild_id
+        );
+    } else {
+        cluster_.global_command_create(grznar);
     }
 }
 
