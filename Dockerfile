@@ -15,6 +15,5 @@ COPY --from=build /src/migrations /app/migrations
 RUN ldconfig && mkdir -p /data /app/rendered && chown -R horelac:horelac /data /app
 USER horelac
 ENV DATABASE_PATH=/data/horelac.db
-VOLUME ["/data"]
 STOPSIGNAL SIGTERM
 ENTRYPOINT ["/usr/local/bin/horelac"]
